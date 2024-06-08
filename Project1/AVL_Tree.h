@@ -1,387 +1,407 @@
-#pragma once
-
 #include <iostream>
 #include <fstream>
 #include <string>
 #include "Circular_Doubly_Linked_List.h"
+
 using namespace std;
 
 struct Node {
     int bal;
     Node* left;
     Node* right;
-    Circle* head;
+    Circle* head; 
     struct group {
         char l;
         int s;
-    }g;
+    } g;
 };
 
-// Функция поиска и добавления нового узла
-bool add_to_tree(char l, int s, Node*& p, bool& h, int num) {
-    Node* p1;
-    Node* p2;
+class AVLTree {
+public:
+    AVLTree() : root(nullptr) {}
 
-    if (p == nullptr) {
-        p = new Node();
-        p->g.l = l;
-        p->g.s = s;
-        p->left = nullptr;
-        p->right = nullptr;
-        p->bal = 0;
-        add_to_list(p->head, num);
-        h = true;
-        return true;
+    void add(char l, int s, int num) {
+        bool h = false;
+        add_to_tree(l, s, root, h, num);
     }
-    else if (p->g.l > l || (p->g.l == l && p->g.s > s)) {
-        add_to_tree(l, s, p->left, h, num);
-        if (h) {
-            if (p->bal == 1) {
-                p->bal = 0;
-                h = false;
+
+    void remove(char l, int s, int num) {
+        bool h = false;
+        DRL(l, s, root, h, num);
+    }
+
+    bool search(char l, int s) {
+        return search_node(root, l, s);
+    }
+
+    void print() {
+        print_tree(root, "", true);
+    }
+
+    void read_from_file(const string& filename) {
+        string line;
+        int num = 0, s;
+        char l;
+        bool h;
+
+        ifstream in(filename);
+        if (in.is_open()) {
+            while (getline(in, line)) {
+                num += 1;
+                l = line[0];
+                s = stoi(line.substr(1, 4));
+                add_to_tree(l, s, root, h, num);
             }
-            else if (p->bal == 0) {
-                p->bal = -1;
-            }
-            else {
-                p1 = p->left;
-                if (p1->bal == -1) {
-                    // одиночная LL-ротация
-                    p->left = p1->right;
-                    p1->right = p;
-                    p->bal = 0;
-                    p = p1;
-                }
-                else {
-                    // двойная LR-ротация
-                    p2 = p1->right;
-                    p1->right = p2->left;
-                    p2->left = p1;
-                    p->left = p2->right;
-                    p2->right = p;
-                    if (p2->bal == -1) {
-                        p->bal = 1;
-                    }
-                    else {
-                        p->bal = 0;
-                    }
-                    if (p2->bal == 1) {
-                        p1->bal = -1;
-                    }
-                    else {
-                        p1->bal = 0;
-                    }
-                    p = p2;
-                }
-                p->bal = 0;
-                h = false;
-            }
+            in.close();
         }
     }
-    else if (p->g.l < l || (p->g.l == l && p->g.s < s)) {
-        add_to_tree(l, s, p->right, h, num);
-        if (h) {
-            if (p->bal == -1) {
-                p->bal = 0;
-                h = false;
-            }
-            else if (p->bal == 0) {
-                p->bal = 1;
-            }
-            else {
-                p1 = p->right;
-                if (p1->bal == 1) {
-                    // одиночная RR-ротация
-                    p->right = p1->left;
-                    p1->left = p;
+
+    void write_to_file(const string& filename) {
+        ofstream file(filename);
+        if (!file.is_open()) {
+            cerr << "Error opening file" << endl;
+            return;
+        }
+        post_order(root, file);
+        file.close();
+    }
+
+    ~AVLTree() {
+        delete_tree(root);
+    }
+
+private:
+    Node* root;
+
+    bool add_to_tree(char l, int s, Node*& p, bool& h, int num) {
+        Node* p1;
+        Node* p2;
+
+        if (p == nullptr) {
+            p = new Node();
+            p->g.l = l;
+            p->g.s = s;
+            p->left = nullptr;
+            p->right = nullptr;
+            p->bal = 0;
+            add_to_list(p->head, num); 
+            h = true;
+            return true;
+        }
+        else if (p->g.l > l || (p->g.l == l && p->g.s > s)) {
+            add_to_tree(l, s, p->left, h, num);
+            if (h) {
+                if (p->bal == 1) {
                     p->bal = 0;
-                    p = p1;
+                    h = false;
+                }
+                else if (p->bal == 0) {
+                    p->bal = -1;
                 }
                 else {
-                    // двойная RL-ротация
-                    p2 = p1->left;
-                    p1->left = p2->right;
-                    p2->right = p1;
-                    p->right = p2->left;
-                    p2->left = p;
-                    if (p2->bal == 1) {
-                        p->bal = -1;
-                    }
-                    else {
+                    p1 = p->left;
+                    if (p1->bal == -1) {
+                        // одиночная LL-ротация
+                        p->left = p1->right;
+                        p1->right = p;
                         p->bal = 0;
-                    }
-                    if (p2->bal == -1) {
-                        p1->bal = 1;
+                        p = p1;
                     }
                     else {
-                        p1->bal = 0;
+                        // двойная LR-ротация
+                        p2 = p1->right;
+                        p1->right = p2->left;
+                        p2->left = p1;
+                        p->left = p2->right;
+                        p2->right = p;
+                        if (p2->bal == -1) {
+                            p->bal = 1;
+                        }
+                        else {
+                            p->bal = 0;
+                        }
+                        if (p2->bal == 1) {
+                            p1->bal = -1;
+                        }
+                        else {
+                            p1->bal = 0;
+                        }
+                        p = p2;
                     }
-                    p = p2;
+                    p->bal = 0;
+                    h = false;
                 }
-                p->bal = 0;
-                h = false;
             }
         }
-    }
-    else {
-        add_to_list(p->head, num); // Если узел уже существует, добавляем число в связанный список
-    }
-    return true;
-}
-
-// Функция печати дерева
-void print_tree(Node* root, string indent, bool last) {
-    if (root != nullptr) {
-        cout << indent;
-        if (last) {
-            cout << "R----";
-            indent += "   ";
+        else if (p->g.l < l || (p->g.l == l && p->g.s < s)) {
+            add_to_tree(l, s, p->right, h, num);
+            if (h) {
+                if (p->bal == -1) {
+                    p->bal = 0;
+                    h = false;
+                }
+                else if (p->bal == 0) {
+                    p->bal = 1;
+                }
+                else {
+                    p1 = p->right;
+                    if (p1->bal == 1) {
+                        // одиночная RR-ротация
+                        p->right = p1->left;
+                        p1->left = p;
+                        p->bal = 0;
+                        p = p1;
+                    }
+                    else {
+                        // двойная RL-ротация
+                        p2 = p1->left;
+                        p1->left = p2->right;
+                        p2->right = p1;
+                        p->right = p2->left;
+                        p2->left = p;
+                        if (p2->bal == 1) {
+                            p->bal = -1;
+                        }
+                        else {
+                            p->bal = 0;
+                        }
+                        if (p2->bal == -1) {
+                            p1->bal = 1;
+                        }
+                        else {
+                            p1->bal = 0;
+                        }
+                        p = p2;
+                    }
+                    p->bal = 0;
+                    h = false;
+                }
+            }
         }
         else {
-            cout << "L----";
-            indent += "|  ";
+            add_to_list(p->head, num); // Если узел уже существует, добавляем число в связанный список
         }
-        cout << root->g.l << root->g.s << "(";
-        print_list(root->head); // Печать связанного списка
-        cout << ")" << endl;
-        print_tree(root->left, indent, false);
-        print_tree(root->right, indent, true);
-    }
-}
-
-// Обратный обход дерева и запись в файл
-void post_order(Node* p, ofstream& file) {
-    if (p == nullptr) {
-        return;
-    }
-    post_order(p->left, file);
-    post_order(p->right, file);
-    file << p->g.l << p->g.s << "\n";
-}
-
-// Поиск узла по значению
-bool search_node(Node* root, char l, int s) {
-    if (root == nullptr) {
-        return false;
-    }
-    else if (root->g.l == l && root->g.s == s) {
         return true;
     }
-    else if (root->g.l < l || (root->g.l == l && root->g.s < s)) {
-        return search_node(root->right, l, s);
-    }
-    else {
-        return search_node(root->left, l, s);
-    }
-}
 
-// Удаление дерева и освобождение памяти
-void delete_tree(Node*& root) {
-    if (root != nullptr) {
-        delete_tree(root->left);
-        delete_tree(root->right);
-        delete_list(root->head);
-        delete root;
-        root = nullptr;
+    void print_tree(Node* root, string indent, bool last) {
+        if (root != nullptr) {
+            cout << indent;
+            if (last) {
+                cout << "R----";
+                indent += "   ";
+            }
+            else {
+                cout << "L----";
+                indent += "|  ";
+            }
+            cout << root->g.l << root->g.s << "(";
+            print_list(root->head); // Печать связанного списка
+            cout << ")" << endl;
+            print_tree(root->left, indent, false);
+            print_tree(root->right, indent, true);
+        }
     }
-}
 
-// Балансировка левого поддерева
-void balanceL(Node*& p, bool& h) {
-    Node* p1;
-    Node* p2;
-    if (p->bal == -1) {
-        p->bal = 0;
-    }
-    else if (p->bal == 0) {
-        p->bal = 1;
-        h = false;
-    }
-    else { // bal == 1 восстановить баланс
-        p1 = p->right;
-        if (p1->bal >= 0) { // одиночная RR-ротация
-            p->right = p1->left;
-            p1->left = p;
-            if (p1->bal == 0) {
-                p->bal = 1;
-                p1->bal = -1;
-                h = false;
-            }
-            else {
-                p->bal = 0;
-                p1->bal = 0;
-            }
-            p = p1;
+    void post_order(Node* p, ofstream& file) {
+        if (p == nullptr) {
+            return;
         }
-        else { // двойная RL-ротация
-            p2 = p1->left;
-            p1->left = p2->right;
-            p2->right = p1;
-            p->right = p2->left;
-            p2->left = p;
-            if (p2->bal == 1) {
-                p->bal = -1;
-            }
-            else {
-                p->bal = 0;
-            }
-            if (p2->bal == -1) {
-                p1->bal = 1;
-            }
-            else {
-                p1->bal = 0;
-            }
-            p = p2;
-            p2->bal = 0;
-        }
+        post_order(p->left, file);
+        post_order(p->right, file);
+        file << p->g.l << p->g.s << "\n";
     }
-}
 
-// Балансировка правого поддерева
-void balanceR(Node*& p, bool& h) {
-    Node* p1;
-    Node* p2;
-    if (p->bal == 1) {
-        p->bal = 0;
-    }
-    else if (p->bal == 0) {
-        p->bal = -1;
-        h = false;
-    }
-    else { // bal == -1 восстановить баланс
-        p1 = p->left;
-        if (p1->bal <= 0) {
-            // одиночная LL-ротация
-            p->left = p1->right;
-            p1->right = p;
-            if (p1->bal == 0) {
-                p->bal = -1;
-                p1->bal = 1;
-                h = false;
-            }
-            else {
-                p->bal = 0;
-                p1->bal = 0;
-            }
-            p = p1;
+    bool search_node(Node* root, char l, int s) {
+        if (root == nullptr) {
+            return false;
         }
-        else { // двойная LR-ротация
-            p2 = p1->right;
-            p1->right = p2->left;
-            p2->left = p1;
-            p->left = p2->right;
-            p2->right = p;
-            if (p2->bal == -1) {
-                p->bal = 1;
-            }
-            else {
-                p->bal = 0;
-            }
-            if (p2->bal == 1) {
-                p1->bal = -1;
-            }
-            else {
-                p1->bal = 0;
-            }
-            p = p2;
-            p2->bal = 0;
+        else if (root->g.l == l && root->g.s == s) {
+            return true;
+        }
+        else if (root->g.l < l || (root->g.l == l && root->g.s < s)) {
+            return search_node(root->right, l, s);
+        }
+        else {
+            return search_node(root->left, l, s);
         }
     }
-}
 
-// Удаление узла справа
-void del_Right(Node*& root, Node*& q, bool& h) {
-    if (root->left != nullptr) {
-        del_Right(root->left, q, h);
-        if (h) {
-            balanceL(root, h);
+    void delete_tree(Node*& root) {
+        if (root != nullptr) {
+            delete_tree(root->left);
+            delete_tree(root->right);
+            delete_list(root->head);
+            delete root;
+            root = nullptr;
         }
     }
-    else {
-        q->g = root->g;
-        q->head = root->head;
-        q = root;
-        root = root->right;
-        h = true;
-    }
-}
 
-// Удаление узла
-bool DRL(char l, int s, Node*& root, bool& h, int num) {
-    if (root == nullptr) {
-        return true;
-    }
-    else if (root->g.l > l || (root->g.l == l && root->g.s > s)) {
-        DRL(l, s, root->left, h, num);
-        if (h) {
-            balanceL(root, h);
+    void balanceL(Node*& p, bool& h) {
+        Node* p1;
+        Node* p2;
+        if (p->bal == -1) {
+            p->bal = 0;
         }
-    }
-    else if (root->g.l < l || (root->g.l == l && root->g.s < s)) {
-        DRL(l, s, root->right, h, num);
-        if (h) {
-            balanceR(root, h);
+        else if (p->bal == 0) {
+            p->bal = 1;
+            h = false;
         }
-    }
-    else {
-        if (root->g.l == l && root->g.s == s) {
-            if (((root->head)->next)->data != root->head->data) {
-                delete_from_list(root->head, num);
-                return true;
+        else { // bal == 1 восстановить баланс
+            p1 = p->right;
+            if (p1->bal >= 0) { // одиночная RR-ротация
+                p->right = p1->left;
+                p1->left = p;
+                if (p1->bal == 0) {
+                    p->bal = 1;
+                    p1->bal = -1;
+                    h = false;
+                }
+                else {
+                    p->bal = 0;
+                    p1->bal = 0;
+                }
+                p = p1;
             }
-            else {
-                if (root->head->data == num) {
-                    Node* q = root;
-                    if (q->right == nullptr) {
-                        root = q->left;
-                        h = true;
-                        return true;
-                    }
-                    else if (q->left == nullptr) {
-                        root = q->right;
-                        h = true;
-                        return true;
-                    }
-                    else {
-                        del_Right(q->right, q, h);
-                        if (h) {
-                            balanceR(root, h);
+            else { // двойная RL-ротация
+                p2 = p1->left;
+                p1->left = p2->right;
+                p2->right = p1;
+                p->right = p2->left;
+                p2->left = p;
+                if (p2->bal == 1) {
+                    p->bal = -1;
+                }
+                else {
+                    p->bal = 0;
+                }
+                if (p2->bal == -1) {
+                    p1->bal = 1;
+                }
+                else {
+                    p1->bal = 0;
+                }
+                p = p2;
+                p2->bal = 0;
+            }
+        }
+    }
+
+    void balanceR(Node*& p, bool& h) {
+        Node* p1;
+        Node* p2;
+        if (p->bal == 1) {
+            p->bal = 0;
+        }
+        else if (p->bal == 0) {
+            p->bal = -1;
+            h = false;
+        }
+        else { // bal == -1 восстановить баланс
+            p1 = p->left;
+            if (p1->bal <= 0) {
+                // одиночная LL-ротация
+                p->left = p1->right;
+                p1->right = p;
+                if (p1->bal == 0) {
+                    p->bal = -1;
+                    p1->bal = 1;
+                    h = false;
+                }
+                else {
+                    p->bal = 0;
+                    p1->bal = 0;
+                }
+                p = p1;
+            }
+            else { // двойная LR-ротация
+                p2 = p1->right;
+                p1->right = p2->left;
+                p2->left = p1;
+                p->left = p2->right;
+                p2->right = p;
+                if (p2->bal == -1) {
+                    p->bal = 1;
+                }
+                else {
+                    p->bal = 0;
+                }
+                if (p2->bal == 1) {
+                    p1->bal = -1;
+                }
+                else {
+                    p1->bal = 0;
+                }
+                p = p2;
+                p2->bal = 0;
+            }
+        }
+    }
+
+    void del_Right(Node*& root, Node*& q, bool& h) {
+        if (root->left != nullptr) {
+            del_Right(root->left, q, h);
+            if (h) {
+                balanceL(root, h);
+            }
+        }
+        else {
+            q->g = root->g;
+            q->head = root->head;
+            q = root;
+            root = root->right;
+            h = true;
+        }
+    }
+
+    bool DRL(char l, int s, Node*& root, bool& h, int num) {
+        if (root == nullptr) {
+            return true;
+        }
+        else if (root->g.l > l || (root->g.l == l && root->g.s > s)) {
+            DRL(l, s, root->left, h, num);
+            if (h) {
+                balanceL(root, h);
+            }
+        }
+        else if (root->g.l < l || (root->g.l == l && root->g.s < s)) {
+            DRL(l, s, root->right, h, num);
+            if (h) {
+                balanceR(root, h);
+            }
+        }
+        else {
+            if (root->g.l == l && root->g.s == s) {
+                if (((root->head)->next)->data != root->head->data) {
+                    delete_from_list(root->head, num);
+                    return true;
+                }
+                else {
+                    if (root->head->data == num) {
+                        Node* q = root;
+                        if (q->right == nullptr) {
+                            root = q->left;
+                            h = true;
+                            return true;
                         }
-                        return true;
+                        else if (q->left == nullptr) {
+                            root = q->right;
+                            h = true;
+                            return true;
+                        }
+                        else {
+                            del_Right(q->right, q, h);
+                            if (h) {
+                                balanceR(root, h);
+                            }
+                            return true;
+                        }
                     }
                 }
             }
         }
+        return false;
     }
-    return false;
-}
+};
 
-// Чтение из файла
-void read_file(Node*& root, const string& filename) {
-    string line;
-    int num = 0, s;
-    char l;
-    bool h;
 
-    ifstream in(filename);
-    if (in.is_open()) {
-        while (getline(in, line)) {
-            num += 1;
-            l = line[0];
-            s = stoi(line.substr(1, 4));
-            add_to_tree(l, s, root, h, num);
-        }
-        in.close();
-    }
-}
-
-// Запись дерева в файл
-void write_to_file(Node*& root, const string& filename) {
-    ofstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Error opening file" << endl;
-        return;
-    }
-    post_order(root, file);
-    file.close();
-}

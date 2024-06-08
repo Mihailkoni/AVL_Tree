@@ -7,10 +7,9 @@ using namespace std;
 
 
 int main() {
-    Node* root = nullptr;
-    read_file(root, "Input.txt");
-    print_tree(root, "", true);
-    write_to_file(root, "Output.txt");
-    delete_tree(root);
+    AVLTree tree;
+    tree.read_from_file("Input.txt");
+    tree.print();
+    tree.write_to_file("Output.txt");
     return 0;
 }
